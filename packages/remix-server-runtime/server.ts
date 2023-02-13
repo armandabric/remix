@@ -58,7 +58,7 @@ export const createRequestHandler: CreateRequestHandlerFunction = (
       unstable_dev !== false &&
       url.pathname ===
         (unstable_dev === true
-          ? "/REMIX_ASSETS_MANIFEST"
+          ? "/__REMIX_ASSETS_MANIFEST"
           : (unstable_dev.remixRequestHandlerPath ?? "") +
             "/__REMIX_ASSETS_MANIFEST")
     ) {
