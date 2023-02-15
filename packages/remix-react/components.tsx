@@ -1587,9 +1587,10 @@ export const LiveReload =
                         if (update.revalidate) {
                           console.log("[HMR] Revalidating [" + update.id + "]");
                         }
+                        let imported = await import(update.url +  '?t=' + event.assetsManifest.hmr.timestamp);
                         if (window.__hmr__.contexts[update.id]) {
                           let accepted = window.__hmr__.contexts[update.id].emit(
-                            await import(update.url +  '?t=' + event.assetsManifest.hmr.timestamp)
+                            imported
                           );
                           if (accepted) {
                             console.log("[HMR] Updated accepted by", update.id);
