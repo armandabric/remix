@@ -87,6 +87,7 @@ export function createServerRoutes(
 
 export function createClientRoutes(
   manifest: RouteManifest<EntryRoute>,
+  routeModulesCache: RouteModules,
   future: FutureConfig,
   parentId?: string
 ): DataRouteObject[] {
@@ -112,12 +113,13 @@ export function createClientRoutes(
         // handle gets added in via useMatches since we aren't guaranteed to
         // have the route module available here
         handle: undefined,
-        loader: createDataFunction(route, false),
-        action: createDataFunction(route, true),
-        shouldRevalidate: createShouldRevalidate(route),
+        loader: createDataFunction(route, routeModulesCache, false),
+        action: createDataFunction(route, routeModulesCache, true),
+        shouldRevalidate: createShouldRevalidate(route, routeModulesCache),
       };
       let children = createClientRoutes(
         manifest,
+        routeModulesCache,
         future,
         route.id
       );
@@ -127,10 +129,11 @@ export function createClientRoutes(
 }
 
 function createShouldRevalidate(
-  route: EntryRoute
+  route: EntryRoute,
+  routeModules: RouteModules
 ): ShouldRevalidateFunction {
   return function (arg) {
-    let module = window.__remixRouteModules[route.id];
+    let module = routeModules[route.id];
     invariant(module, `Expected route module to be loaded for ${route.id}`);
     if (module.shouldRevalidate) {
       return module.shouldRevalidate(arg);
@@ -139,18 +142,25 @@ function createShouldRevalidate(
   };
 }
 
-async function loadRouteModuleWithBlockingLinks(route: EntryRoute) {
-  let routeModule = await loadRouteModule(route);
+async function loadRouteModuleWithBlockingLinks(
+  route: EntryRoute,
+  routeModules: RouteModules
+) {
+  let routeModule = await loadRouteModule(route, routeModules);
   await prefetchStyleLinks(routeModule);
   return routeModule;
 }
 
 function createDataFunction(
   route: EntryRoute,
+  routeModules: RouteModules,
   isAction: boolean
 ): LoaderFunction | ActionFunction {
   return async ({ request }) => {
-    let routeModulePromise = loadRouteModuleWithBlockingLinks(route);
+    let routeModulePromise = loadRouteModuleWithBlockingLinks(
+      route,
+      routeModules
+    );
     try {
       if (isAction && !route.hasAction) {
         let msg =
